@@ -11,41 +11,44 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // quan_wt
-NumericVector quan_wt(NumericVector x, NumericVector q, Nullable<NumericVector> w);
-RcppExport SEXP _ProUtils_quan_wt(SEXP xSEXP, SEXP qSEXP, SEXP wSEXP) {
+NumericVector quan_wt(NumericVector x, NumericVector probs, Nullable<NumericVector> wt, int type);
+RcppExport SEXP _ProUtils_quan_wt(SEXP xSEXP, SEXP probsSEXP, SEXP wtSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type q(qSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(quan_wt(x, q, w));
+    Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type wt(wtSEXP);
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(quan_wt(x, probs, wt, type));
     return rcpp_result_gen;
 END_RCPP
 }
 // quan_wt_mat_col
-SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector q, Nullable<NumericMatrix> w);
-RcppExport SEXP _ProUtils_quan_wt_mat_col(SEXP matSEXP, SEXP qSEXP, SEXP wSEXP) {
+SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs, Nullable<NumericMatrix> wt, int type);
+RcppExport SEXP _ProUtils_quan_wt_mat_col(SEXP matSEXP, SEXP probsSEXP, SEXP wtSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type mat(matSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type q(qSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(quan_wt_mat_col(mat, q, w));
+    Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type wt(wtSEXP);
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(quan_wt_mat_col(mat, probs, wt, type));
     return rcpp_result_gen;
 END_RCPP
 }
 // quan_wt_mat_row
-SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector q, Nullable<NumericMatrix> w);
-RcppExport SEXP _ProUtils_quan_wt_mat_row(SEXP matSEXP, SEXP qSEXP, SEXP wSEXP) {
+SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs, Nullable<NumericMatrix> wt, int type);
+RcppExport SEXP _ProUtils_quan_wt_mat_row(SEXP matSEXP, SEXP probsSEXP, SEXP wtSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type mat(matSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type q(qSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type w(wSEXP);
-    rcpp_result_gen = Rcpp::wrap(quan_wt_mat_row(mat, q, w));
+    Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type wt(wtSEXP);
+    Rcpp::traits::input_parameter< int >::type type(typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(quan_wt_mat_row(mat, probs, wt, type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -100,9 +103,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_ProUtils_quan_wt", (DL_FUNC) &_ProUtils_quan_wt, 3},
-    {"_ProUtils_quan_wt_mat_col", (DL_FUNC) &_ProUtils_quan_wt_mat_col, 3},
-    {"_ProUtils_quan_wt_mat_row", (DL_FUNC) &_ProUtils_quan_wt_mat_row, 3},
+    {"_ProUtils_quan_wt", (DL_FUNC) &_ProUtils_quan_wt, 4},
+    {"_ProUtils_quan_wt_mat_col", (DL_FUNC) &_ProUtils_quan_wt_mat_col, 4},
+    {"_ProUtils_quan_wt_mat_row", (DL_FUNC) &_ProUtils_quan_wt_mat_row, 4},
     {"_ProUtils_addVector", (DL_FUNC) &_ProUtils_addVector, 1},
     {"_ProUtils_getMedian", (DL_FUNC) &_ProUtils_getMedian, 0},
     {"_ProUtils_clearHeaps", (DL_FUNC) &_ProUtils_clearHeaps, 0},
