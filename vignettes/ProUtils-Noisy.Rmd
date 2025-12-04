@@ -1,0 +1,339 @@
+---
+title: "ProUtils: Don't be Noisy!"
+author: "Aaron Robotham"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ProUtils: Don't be Noisy!}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Load our libraries:
+
+```{r}
+library(ProUtils)
+library(matrixStats)
+library(foreach)
+library(doParallel)
+library(magicaxis)
+```
+
+Below we want to test the impact of different average measurements. In particular, we want to understand the regimes where simple medians and inverse-variance weighted medians prove to be a better measurement of the true mean (which is 0 in all of the cases below).
+
+## No Outlier Experiment:
+
+Set-up our experiment options. Initially we are going to produce no outliers in each test, so we would expect the inverse-variance weighted mean to produce the best results, followed by the inverse-variance weighted median:
+
+```{r}
+N_experiment = 1e4 #how many test to run
+N_samp = 100 #the number of samples per test
+N_bad = 0 #the number of outlier samples to generate
+sd_bad = 10 #the standard-deviation to sample from for outliers
+registerDoParallel(cores=20)
+```
+
+Run the experiments:
+
+```{r}
+#A dumb mean
+temp_mean = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(mean(temp))
+}
+
+#An inverse-variance weighted mean
+temp_mean_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(weightedMean(temp, temp_invar))
+}
+
+#A dumb median
+temp_med = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(median(temp))
+}
+
+#An inverse-variance weighted median
+temp_med_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(quan_wt(temp, 0.5, temp_invar))
+}
+```
+
+Create the plots:
+
+```{r fig.width=6, fig.height=6}
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(0,3), col='grey', xlab='Average', ylab='PDF')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(1e-2,3), col='grey', xlab='Average', ylab='PDF', log='y')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magbin(temp_mean_wt, temp_med_wt, colstretch = 'log',
+       xlab='mean_wt', ylab='med_wt', xlim=c(-1,1), ylim=c(-1,1))
+```
+
+As we should expect, the inverse-variance weighted mean produces the best (tightest) distribution followed by the inverse-variance weighted median. The dumb mean is by far the worst in this situation since it is not down-weighting high variance samples which the dumb median does fairly naturally due to its robust nature.
+
+## One Outlier Experiment:
+
+Set-up our experiment options. Now we are going to produce one outlier in each test (so 1/100 bad samples):
+
+```{r}
+N_experiment = 1e4 #how many test to run
+N_samp = 100 #the number of samples per test
+N_bad = 1 #the number of outlier samples to generate
+sd_bad = 10 #the standard-deviation to sample from for outliers
+registerDoParallel(cores=20)
+```
+
+Run the experiments:
+
+```{r}
+#A dumb mean
+temp_mean = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(mean(temp))
+}
+
+#An inverse-variance weighted mean
+temp_mean_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(weightedMean(temp, temp_invar))
+}
+
+#A dumb median
+temp_med = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(median(temp))
+}
+
+#An inverse-variance weighted median
+temp_med_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(quan_wt(temp, 0.5, temp_invar))
+}
+```
+
+Create the plots:
+
+```{r fig.width=6, fig.height=6}
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(0,2.5), col='grey', xlab='Average', ylab='PDF')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(1e-2,2.5), col='grey', xlab='Average', ylab='PDF', log='y')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magbin(temp_mean_wt, temp_med_wt, colstretch = 'log',
+       xlab='mean_wt', ylab='med_wt', xlim=c(-1,1), ylim=c(-1,1))
+```
+
+Now the inverse-variance weighted mean and the inverse-variance weighted median are very similar. This is interesting, because it means you only need one moderately bad data point per 100 samples to justify shifting averages. In many situations (astronomy image and spectral stacking) you would easily expect to be in this domain.
+
+## Three Outlier Experiment:
+
+Set-up our experiment options. Now we are going to produce three outliers in each test (so 3/100 bad samples):
+
+```{r}
+N_experiment = 1e4 #how many test to run
+N_samp = 100 #the number of samples per test
+N_bad = 3 #the number of outlier samples to generate
+sd_bad = 10 #the standard-deviation to sample from for outliers
+registerDoParallel(cores=20)
+```
+
+Run the experiments:
+
+```{r}
+#A dumb mean
+temp_mean = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(mean(temp))
+}
+
+#An inverse-variance weighted mean
+temp_mean_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(weightedMean(temp, temp_invar))
+}
+
+#A dumb median
+temp_med = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(median(temp))
+}
+
+#An inverse-variance weighted median
+temp_med_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(quan_wt(temp, 0.5, temp_invar))
+}
+```
+
+Create the plots:
+
+```{r fig.width=6, fig.height=6}
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(0,2.5), col='grey', xlab='Average', ylab='PDF')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(1e-2,2.5), col='grey', xlab='Average', ylab='PDF', log='y')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magbin(temp_mean_wt, temp_med_wt, colstretch = 'log',
+       xlab='mean_wt', ylab='med_wt', xlim=c(-1,1), ylim=c(-1,1))
+```
+
+Now we comfortably prefer the inverse-variance weighted median with 3/100 outliers.
+
+## Five Outlier Experiment:
+
+Set-up our experiment options. Now we are going to produce five outliers in each test (so 5/100 bad samples):
+
+```{r}
+N_experiment = 1e4 #how many test to run
+N_samp = 100 #the number of samples per test
+N_bad = 5 #the number of outlier samples to generate
+sd_bad = 10 #the standard-deviation to sample from for outliers
+registerDoParallel(cores=20)
+```
+
+Run the experiments:
+
+```{r}
+#A dumb mean
+temp_mean = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(mean(temp))
+}
+
+#An inverse-variance weighted mean
+temp_mean_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(weightedMean(temp, temp_invar))
+}
+
+#A dumb median
+temp_med = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(median(temp))
+}
+
+#An inverse-variance weighted median
+temp_med_wt = foreach(i = 1:N_experiment, .combine='c')%dopar%{
+  set.seed(i)
+  temp_invar = runif(N_samp)
+  temp = rnorm(N_samp, sd=1/sqrt(temp_invar))
+  temp[sample(N_samp, N_bad)] = rnorm(N_bad, sd=sd_bad)
+  return(quan_wt(temp, 0.5, temp_invar))
+}
+```
+
+Create the plots:
+
+```{r fig.width=6, fig.height=6}
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(0,2.5), col='grey', xlab='Average', ylab='PDF')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magplot(density(temp_mean, from=-5, to=5),
+        xlim=c(-1,1), ylim=c(1e-2,2.5), col='grey', xlab='Average', ylab='PDF', log='y')
+lines(density(temp_mean_wt, from=-5, to=5), col='black')
+lines(density(temp_med, from=-5, to=5), col='red')
+lines(density(temp_med_wt, from=-5, to=5), col='blue')
+
+par(mar = c(3.1,3.1,1.1,1.1))
+magbin(temp_mean_wt, temp_med_wt, colstretch = 'log',
+       xlab='mean_wt', ylab='med_wt', xlim=c(-1,1), ylim=c(-1,1))
+```
+
+Now we over-whelmingly prefer the inverse-variance weighted median with 5/100 outliers. The inverse-variance weighted mean is now not much better than the bumb mean.
+
+## Conclusions:
+
+If you genuinely have no outliers, and believe you have a meaningful measurement of the inverse-variance, then the inverse-variance weighted mean is indeed the preferable stacking option. But if you have as little as 1/100 outlier samples (where the true variance is x10 larger than the assumed variance, which is a pretty moderate outlier in e.g. astronomy data with hot pixels and cosmic rays etc) then we already find the inverse-variance weighted median performs as well, and a larger outlier fraction than that (or more extreme outliers) we comfortably prefer the inverse-variance weighted median stacking option.
+
+This suggests that for many astronomy applications in particular (where outliers can be very extreme, and perhaps many percent of the data to be stacked) users should consider the superiority of a inverse-variance weighted median stacking approach, as offered by **ProUtils** and the **quan_wt** and associated matrix functions.

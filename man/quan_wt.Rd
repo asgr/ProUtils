@@ -19,7 +19,7 @@ quan_wt_mat_row(mat, probs = as.numeric(c(0.5)), wt = NULL, type = 7L)
   \item{type}{Integer scalar between 4 and 9 selecting one of the continuous quantile algorithms detailed below to be used (see \code{\link{quantile}}). Default is 7, the same as base \code{\link{quantile}}.}
 }
 \details{
-For \code{quan_wt}, the function computes weighted quantiles using the midpoint rule for cumulative probabilities (see Examples). This rule behaves differently to no-weight \code{\link{quantile}} with the default \option{type} = 7, which is not to say it is wrong, there are just different ways to consider quantile treatment. The method used here is basically akin to \option{5} when not using weights. If weights are not provided, all weights (\option{w}) are assumed to be the same and internally valued 1. If all values are \code{NA} or weights sum to zero, \code{NA} is returned.
+For \code{quan_wt}, the function computes weighted quantiles using different rules that capture the classic continuous quantile \option{type} (see Examples).
 
 For \code{quan_wt_mat_col} and \code{quan_wt_mat_row} matrix functions, when \code{length(probs) == 1} the functions return a numeric vector of length equal to the number of rows/columns (as relevant). If multiple quantiles are requested, the function returns a numeric matrix with:
 \itemize{
@@ -28,9 +28,9 @@ For \code{quan_wt_mat_col} and \code{quan_wt_mat_row} matrix functions, when \co
 }
 }
 \value{
-For \code{quan_wt}: A numeric vector of length equal to \code{length(probs)} containing the requested quantiles. \cr
+For \code{quan_wt}: A numeric vector of length equal to \code{length(probs)} containing the requested quantiles. If all values are \code{NA} or weights sum to zero, \code{NA} is returned. \cr
 
-For \code{quan_wt_mat_col} and \code{quan_wt_mat_row}: A numeric vector (if one quantile requested) or a numeric matrix (if multiple quantiles requested).
+For \code{quan_wt_mat_col} and \code{quan_wt_mat_row}: A numeric vector (if one quantile requested) or a numeric matrix (if multiple quantiles requested). In the matrix case, the column order corresponds to the requested \option{probs} and rows are the outputs of \code{quan_wt}.
 }
 \examples{
 #vector examples
