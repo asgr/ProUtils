@@ -1,14 +1,16 @@
 #include <Rcpp.h>
+// #ifdef _OPENMP
+// #include <omp.h>
+// #endif
+
 using namespace Rcpp;
 
-// [[Rcpp::export]]
-NumericVector quan_wt(NumericVector x, NumericVector probs = NumericVector::create(0.5),
-                      Nullable<NumericVector> wt = R_NilValue, int type = 7) {
+NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = NumericVector::create(0.5), const Nullable<NumericVector> wt = R_NilValue, const int type = 7) {
   int n = x.size();
   int nprobs = probs.size();
-  
+
   if (n == 0) return NumericVector(nprobs, NA_REAL);
-  
+
   if (type < 4 || type > 9) stop("type must be between 5 and 9 (inclusive)");
 
   // Validate q values
@@ -53,7 +55,7 @@ NumericVector quan_wt(NumericVector x, NumericVector probs = NumericVector::crea
   case 8: start_mod = 0.6666667; end_mod = 0.6666667; break;
   case 9: start_mod = 0.625; end_mod = 0.625; break;
   }
-  
+
   // Compute total weight
 
   // Compute cumulative probabilities using midpoint rule
@@ -110,6 +112,12 @@ NumericVector quan_wt(NumericVector x, NumericVector probs = NumericVector::crea
 }
 
 // [[Rcpp::export]]
+NumericVector quan_wt(NumericVector x, NumericVector probs = NumericVector::create(0.5),
+                      Nullable<NumericVector> wt = R_NilValue, int type = 7){
+  return _quan_wt(x, probs, wt, type);
+}
+
+// [[Rcpp::export]]
 SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::create(0.5),
                               Nullable<NumericMatrix> wt = R_NilValue, int type = 7) {
   int nrow = mat.nrow();
@@ -120,8 +128,12 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
   NumericMatrix result(ncol, nprobs);
 
   if (wt.isNull()) {
+    // #ifdef _OPENMP
+    //     // Parallelize the main loop. Use 'if' to avoid overhead for tiny n.
+    // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
+    // #endif
     for (int j = 0; j < ncol; j++) {
-      NumericVector colQuant = quan_wt(mat(_, j), probs);
+      NumericVector colQuant = _quan_wt(mat(_, j), probs);
       for (int k = 0; k < nprobs; k++) {
         result(j, k) = colQuant[k];
       }
@@ -131,9 +143,13 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
     if (wt_temp.nrow() != nrow) stop("Row dims of weights must match mat");
     if (wt_temp.ncol() != ncol) stop("Column dims of weights must match mat");
 
+    // #ifdef _OPENMP
+    //     // Parallelize the main loop. Use 'if' to avoid overhead for tiny n.
+    // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
+    // #endif
     for (int j = 0; j < ncol; j++) {
       NumericVector wt_vec = wt_temp(_, j);
-      NumericVector colQuant = quan_wt(mat(_, j), probs, wt_vec, type);
+      NumericVector colQuant = _quan_wt(mat(_, j), probs, wt_vec, type);
       for (int k = 0; k < nprobs; k++) {
         result(j, k) = colQuant[k];
       }
@@ -163,8 +179,12 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
   NumericMatrix result(nrow, nprobs);
 
   if (wt.isNull()) {
+    // #ifdef _OPENMP
+    //     // Parallelize the main loop. Use 'if' to avoid overhead for tiny n.
+    // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
+    // #endif
     for (int i = 0; i < nrow; i++) {
-      NumericVector rowQuant = quan_wt(mat(i, _), probs);
+      NumericVector rowQuant = _quan_wt(mat(i, _), probs);
       for (int k = 0; k < nprobs; k++) {
         result(i, k) = rowQuant[k];
       }
@@ -174,9 +194,13 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
     if (wt_temp.nrow() != nrow) stop("Row dims of weights must match mat");
     if (wt_temp.ncol() != ncol) stop("Column dims of weights must match mat");
 
+    // #ifdef _OPENMP
+    //     // Parallelize the main loop. Use 'if' to avoid overhead for tiny n.
+    // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
+    // #endif
     for (int i = 0; i < nrow; i++) {
       NumericVector wt_vec = wt_temp(i, _);
-      NumericVector rowQuant = quan_wt(mat(i, _), probs, wt_vec, type);
+      NumericVector rowQuant = _quan_wt(mat(i, _), probs, wt_vec, type);
       for (int k = 0; k < nprobs; k++) {
         result(i, k) = rowQuant[k];
       }
@@ -194,4 +218,3 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
     return result;
   }
 }
-
