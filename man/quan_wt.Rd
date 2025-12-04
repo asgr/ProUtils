@@ -48,6 +48,12 @@ for(type in 4:9){
 }
 
 #now weighted quantiles:
+#The weight free version should return 5:
+quan_wt(0:10)
+
+#But with weights 0:10 we should expect close to 10*sqrt(2)/2 (why is hwk for user!):
+quan_wt(0:10, wt=0:10)
+
 w = c(3, 5, 2, 1, 4)
 quan_wt(x, c(0.25, 0.5, 0.75), w) # Weighted quantiles
 
@@ -60,7 +66,7 @@ for(type in 4:9){
   w_mod = w[x_ord]
   w_tot = w_mod[1]*start_mod + sum(w_mod[1:4] + w_mod[2:5])/2 + w_mod[5]*end_mod
   w_mod = c(w_mod[1]*start_mod, (w_mod[1:4] + w_mod[2:5])/2)
-  
+
   plot(x[x_ord], cumsum(w_mod)/w_tot, type='l', xlim=c(0.5,7.5), ylim=c(0,1))
   rect(-1, -1, out[1], 0.25, lty=3)
   rect(-1, -1, out[2], 0.5, lty=3)
