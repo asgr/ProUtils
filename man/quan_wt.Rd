@@ -21,11 +21,13 @@ quan_wt_mat_row(mat, probs = as.numeric(c(0.5)), wt = NULL, type = 7L)
 \details{
 For \code{quan_wt}, the function computes weighted quantiles using different rules that capture the classic continuous quantile \option{type} (see Examples).
 
-For \code{quan_wt_mat_col} and \code{quan_wt_mat_row} matrix functions, when \code{length(probs) == 1} the functions return a numeric vector of length equal to the number of rows/columns (as relevant). If multiple quantiles are requested, the function returns a numeric matrix with:
+For \code{quan_wt_mat_col} and \code{quan_wt_mat_row} matrix functions, when \code{length(probs) == 1} the functions return a numeric vector of length equal to the number of columns/rows (as relevant). If multiple quantiles are requested, the function returns a numeric matrix with:
 \itemize{
   \item Rows corresponding to rows/columns of \code{mat} (as relevant).
   \item Columns corresponding to quantiles in \code{probs}.
 }
+
+For clarity, if the matrix is [N,M] dimensions, then \code{quan_wt_mat_row} with defaults (so median) returns a vector length [N] and \code{quan_wt_mat_col} with defaults (so median) returns a vector length [M].
 }
 \value{
 For \code{quan_wt}: A numeric vector of length equal to \code{length(probs)} containing the requested quantiles. If all values are \code{NA} or weights sum to zero, \code{NA} is returned. \cr
@@ -87,6 +89,11 @@ quan_wt_mat_col(mat, c(0.25, 0.5, 0.75), w) # Weighted column quantiles
 quan_wt_mat_row(mat)                      # Row medians
 quan_wt_mat_row(mat, c(0.25, 0.5, 0.75))  # Multiple row quantiles
 quan_wt_mat_row(mat, c(0.25, 0.5, 0.75), w) # Weighted row quantiles
+
+#these should be the same:
+set.seed(666); temp = matrix(rnorm(1e6),1e5,10)
+set.seed(666); temp2 = matrix(rnorm(1e6),10,1e5,byrow=T)
+all(quan_wt_mat_row(temp) == quan_wt_mat_col(temp2))
 }
 \seealso{
 \code{\link{quantile}}, \code{\link{weighted.mean}}
