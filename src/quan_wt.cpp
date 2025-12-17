@@ -9,6 +9,7 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
   int n = x.size();
   int nprobs = probs.size();
 
+  // Special return case where x is empty/NULL/missing:
   if (n == 0) return NumericVector(nprobs, NA_REAL);
 
   if (type < 4 || type > 9) stop("type must be between 5 and 9 (inclusive)");
@@ -36,24 +37,29 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
       data.push_back(std::make_pair(x[i], wt_vec[i]));
     }
   }
-  if (data.empty()) return NumericVector(nprobs, NA_REAL);
 
+  // Special return case where everything is NA:
+  if (data.empty()) return NumericVector(nprobs, NA_REAL);
+  // Special return case where remaining length is 1 (so answer should always be that, no matter the quantile)
+  if (data.size() == 1) return NumericVector(nprobs, data[0].first);
+
+  // Otherwise we have more values to deal with...
   // Sort by x
   std::sort(data.begin(), data.end(),
             [](const std::pair<double,double>& a, const std::pair<double,double>& b) {
               return a.first < b.first;
             });
 
-  // Adjust plotting position based on type
+  // Adjust quantile position based on type
   double start_mod;
   double end_mod;
   switch (type) {
-  case 4: start_mod = 1; end_mod = 0; break;
-  case 5: start_mod = 0.5; end_mod = 0.5; break;
-  case 6: start_mod = 1; end_mod = 1; break;
-  case 7: start_mod = 0; end_mod = 0; break;
-  case 8: start_mod = 0.6666667; end_mod = 0.6666667; break;
-  case 9: start_mod = 0.625; end_mod = 0.625; break;
+    case 4: start_mod = 1; end_mod = 0; break;
+    case 5: start_mod = 0.5; end_mod = 0.5; break;
+    case 6: start_mod = 1; end_mod = 1; break;
+    case 7: start_mod = 0; end_mod = 0; break;
+    case 8: start_mod = 0.6666667; end_mod = 0.6666667; break;
+    case 9: start_mod = 0.625; end_mod = 0.625; break;
   }
 
   // Compute total weight
@@ -68,16 +74,17 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
     cumProb[i] = tempWeight;
   }
 
-  // so we count the half bin at the high end correctly
+  // So we count the half bin at the high end correctly
   double totalWeight = cumProb[data.size() - 1] + data[data.size() - 1].second * end_mod;
 
+  // Special return case where there is no weight at all:
   if (totalWeight == 0.0) return NumericVector(nprobs, NA_REAL);
 
   for (size_t i = 0; i < data.size(); i++) {
     cumProb[i] /= totalWeight;
   }
 
-  // Compute quantiles
+  // Compute quantiles for our non-trivial case:
   NumericVector result(nprobs);
   for (int k = 0; k < nprobs; k++) {
     double prob = probs[k];
