@@ -1,15 +1,16 @@
 Package: ProUtils
 Type: Package
 Title: ProTools Utility Functions
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: person(given='Aaron', family='Robotham', email='aaron.robotham@uwa.edu.au',
         role=c('aut', 'cre'), comment=c(ORCID='0000-0003-0429-3579'))
 Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Various useful fairly low-level functions that are used across multiple ProTools packages.
 License: LGPL-3
-Depends: R (>= 4.0.0), Rcpp (>= 1.0.0)
+Imports: Rcpp (>= 1.0.0)
+Suggests: knitr, magicaxis, matrixStats, foreach, doParallel
 Encoding: UTF-8
 LazyData: true
 LinkingTo: Rcpp
 NeedsCompilation: yes
-RoxygenNote: 7.3.2
+VignetteBuilder: knitr

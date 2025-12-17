@@ -2,6 +2,8 @@
 \alias{quan_wt}
 \alias{quan_wt_mat_col}
 \alias{quan_wt_mat_row}
+\alias{quan_wt_array}
+
 \title{Compute Weighted Quantiles for a Numeric Vector of Matrix}
 \description{
 Computes one or more quantiles for a numeric vector or matrix, optionally using weights.
@@ -10,12 +12,14 @@ Computes one or more quantiles for a numeric vector or matrix, optionally using 
 quan_wt(x, probs = as.numeric(c(0.5)), wt = NULL, type = 7L)
 quan_wt_mat_col(mat, probs = as.numeric(c(0.5)), wt = NULL, type = 7L)
 quan_wt_mat_row(mat, probs = as.numeric(c(0.5)), wt = NULL, type = 7L)
+quan_wt_array(array, probs = 0.5, wt = NULL, type = 7)
 }
 \arguments{
   \item{x}{Numeric vector. Missing values (\code{NA}) are ignored).}
   \item{mat}{Numeric matrix. Missing values (\code{NA}) are ignored).}
+  \item{array}{Numeric array or list. Either 3D array (cube) or a list of 2D matrices (each matrix must have the same dimensions).}
   \item{probs}{Numeric vector of probabilities in [0, 1]. Defaults to \code{0.5} (median).}
-  \item{wt}{An optional numeric vector of weights of the same length/dims as \option{x}/\option{mat}. If \code{NULL}, equal weights are assumed. If using errors, then \option{wt} should be the inverse variance.}
+  \item{wt}{An optional numeric vector/matrix/array/list of weights of the same length/dims/shape as \option{x}/\option{mat}/\option{array}. If \code{NULL}, equal weights are assumed. If using errors, then \option{wt} should be the inverse variance.}
   \item{type}{Integer scalar between 4 and 9 selecting one of the continuous quantile algorithms detailed below to be used (see \code{\link{quantile}}). Default is 7, the same as base \code{\link{quantile}}.}
 }
 \details{
@@ -27,12 +31,16 @@ For \code{quan_wt_mat_col} and \code{quan_wt_mat_row} matrix functions, when \co
   \item Columns corresponding to quantiles in \code{probs}.
 }
 
-For clarity, if the matrix is [N,M] dimensions, then \code{quan_wt_mat_row} with defaults (so median) returns a vector length [N] and \code{quan_wt_mat_col} with defaults (so median) returns a vector length [M].
+For clarity, if the matrix is [M,N] dimensions, then \code{quan_wt_mat_row} with defaults (so median) returns a vector length [M] and \code{quan_wt_mat_col} with defaults (so median) returns a vector length [N].
+
+For \code{quan_wt_array} when \code{length(probs) == 1} the functions return a numeric matrix [M, N] (the shape of each image layer). If multiple quantiles are requested (so length of \option{probs} is Q), the function returns a numeric array with dimensions [M,N,Q].
 }
 \value{
 For \code{quan_wt}: A numeric vector of length equal to \code{length(probs)} containing the requested quantiles. If all values are \code{NA} or weights sum to zero, \code{NA} is returned. \cr
 
 For \code{quan_wt_mat_col} and \code{quan_wt_mat_row}: A numeric vector (if one quantile requested) or a numeric matrix (if multiple quantiles requested). In the matrix case, the column order corresponds to the requested \option{probs} and rows are the outputs of \code{quan_wt}.
+
+For \code{quan_wt_array}: A numeric matrix (if one quantile requested) or a numeric array (if multiple quantiles requested). In the array case, the depth order corresponds to the requested \option{probs} and matrices are the outputs of \code{quan_wt}.
 }
 \examples{
 #vector examples
@@ -91,9 +99,23 @@ quan_wt_mat_row(mat, c(0.25, 0.5, 0.75))  # Multiple row quantiles
 quan_wt_mat_row(mat, c(0.25, 0.5, 0.75), w) # Weighted row quantiles
 
 #these should be the same:
-set.seed(666); temp = matrix(rnorm(1e6),1e5,10)
-set.seed(666); temp2 = matrix(rnorm(1e6),10,1e5,byrow=T)
+set.seed(666); temp = matrix(rnorm(1e6), 1e5, 10)
+set.seed(666); temp2 = matrix(rnorm(1e6), 10, 1e5, byrow=TRUE)
 all(quan_wt_mat_row(temp) == quan_wt_mat_col(temp2))
+
+#array quantile:
+library(magicaxis)
+
+temp_im = list(matrix(rnorm(1e4), 100, 100), matrix(rnorm(1e4), 100, 100),
+ matrix(rnorm(1e4), 100, 100), matrix(rnorm(1e4), 100, 100), matrix(rnorm(1e4), 100, 100))
+magimage(quan_wt_array(temp_im), qdiff=TRUE)
+
+temp_wt = list(matrix(runif(1e4), 100, 100), matrix(runif(1e4), 100, 100),
+ matrix(runif(1e4), 100, 100), matrix(runif(1e4), 100, 100), matrix(runif(1e4), 100, 100))
+temp_out = quan_wt_array(temp_im, c(0.25,0.5,0.75), temp_wt)
+magimage(temp_out[,,1], qdiff=TRUE) #quantile image at probs[1] = 0.25
+magimage(temp_out[,,2], qdiff=TRUE) #quantile image at probs[2] = 0.5
+magimage(temp_out[,,3], qdiff=TRUE) #quantile image at probs[3] = 0.75
 }
 \seealso{
 \code{\link{quantile}}, \code{\link{weighted.mean}}
