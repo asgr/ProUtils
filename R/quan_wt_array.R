@@ -1,5 +1,15 @@
 quan_wt_array = function(array, probs = 0.5, wt = NULL, type = 7){
   if(is.list(array)){
+    for(i in seq_along(array)){
+      if(length(dim(array[[i]])) != 2){
+        stop('Dimensions of array sub-list ', i, ' is not a matrix!')
+      }
+
+      if(!all(dim(array[[1]]) == dim(array[[i]]))){
+        stop('Dimensions of array sub-matrix ', i, ' does not match first!')
+      }
+    }
+
     dim_array = c(dim(array[[1]]), length(array))
     array = unlist(array)
   }else{
