@@ -25,7 +25,19 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
 
   NumericVector wt_vec;
   if (wt.isNull()) {
-    wt_vec = NumericVector(n, 1.0); // equal weights if none provided
+    //wt_vec = NumericVector(n, 1.0); // equal weights if none provided
+    Rcpp::Environment stats_env = Rcpp::Environment::namespace_env("stats");
+    if (probs.size() == 1 && std::abs(probs[0] - 0.5) < 1e-12) {
+      Rcpp::Function my_median = stats_env["median"];
+      return my_median(x, true); // positional argument for na.rm
+    } else { 
+      Rcpp::Function my_quantile = stats_env["quantile"];
+      return my_quantile(x,
+                         Named("probs") = probs,
+                         Named("na.rm") = true,
+                         Named("names") = false,
+                         Named("type") = type);
+    }
   } else {
     wt_vec = NumericVector(wt);
     if (wt_vec.size() != n) stop("x and wt must have the same length");

@@ -12,7 +12,8 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
@@ -37,7 +38,7 @@ N_experiment = 1e4 #how many test to run
 N_samp = 100 #the number of samples per test
 N_bad = 0 #the number of outlier samples to generate
 sd_bad = 10 #the standard-deviation to sample from for outliers
-registerDoParallel(cores=20)
+registerDoParallel(cores=8)
 ```
 
 Run the experiments:
