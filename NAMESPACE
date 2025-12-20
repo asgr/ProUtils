@@ -1,5 +1,6 @@
 exportPattern("^[[:alpha:]]+")
 
 import("Rcpp")
+import("collapse")
 
 useDynLib(ProUtils, .registration=TRUE)

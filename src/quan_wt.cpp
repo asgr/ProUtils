@@ -19,10 +19,6 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
     if (probs[i] < 0.0 || probs[i] > 1.0) stop("All prob values must be between 0 and 1");
   }
 
-  // Prepare data
-  std::vector<std::pair<double, double>> data;
-  data.reserve(n);
-
   NumericVector wt_vec;
   if (wt.isNull()) {
     //wt_vec = NumericVector(n, 1.0); // equal weights if none provided
@@ -42,6 +38,10 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
     wt_vec = NumericVector(wt);
     if (wt_vec.size() != n) stop("x and wt must have the same length");
   }
+  
+  // Prepare data
+  std::vector<std::pair<double, double>> data;
+  data.reserve(n);
 
   // Filter out NA
   for (int i = 0; i < n; i++) {
@@ -133,7 +133,15 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
 // [[Rcpp::export]]
 NumericVector quan_wt(NumericVector x, NumericVector probs = NumericVector::create(0.5),
                       Nullable<NumericVector> wt = R_NilValue, int type = 7){
-  return _quan_wt(x, probs, wt, type);
+  Rcpp::Environment collapse_env = Rcpp::Environment::namespace_env("collapse");
+  Rcpp::Function my_fquantile = collapse_env["fquantile"];
+  return my_fquantile(x,
+                       Named("probs") = probs,
+                       Named("w") = wt,
+                       Named("na.rm") = true,
+                       Named("names") = false,
+                       Named("type") = type);
+// return _quan_wt(x, probs, wt, type);
 }
 
 // [[Rcpp::export]]
@@ -143,6 +151,9 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
   int ncol = mat.ncol();
   int nprobs = probs.size();
 
+  Rcpp::Environment collapse_env = Rcpp::Environment::namespace_env("collapse");
+  Rcpp::Function my_fquantile = collapse_env["fquantile"];
+  
   // Result matrix: rows = columns of mat, columns = quantiles
   NumericMatrix result(ncol, nprobs);
 
@@ -152,7 +163,12 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
     // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
     // #endif
     for (int j = 0; j < ncol; j++) {
-      NumericVector colQuant = _quan_wt(mat(_, j), probs);
+      //NumericVector colQuant = _quan_wt(mat(_, j), probs);
+      NumericVector colQuant = my_fquantile(mat(_, j),
+                   Named("probs") = probs,
+                   Named("na.rm") = true,
+                   Named("names") = false,
+                   Named("type") = type);
       for (int k = 0; k < nprobs; k++) {
         result(j, k) = colQuant[k];
       }
@@ -168,7 +184,13 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
     // #endif
     for (int j = 0; j < ncol; j++) {
       NumericVector wt_vec = wt_temp(_, j);
-      NumericVector colQuant = _quan_wt(mat(_, j), probs, wt_vec, type);
+      //NumericVector colQuant = _quan_wt(mat(_, j), probs, wt_vec, type);
+      NumericVector colQuant = my_fquantile(mat(_, j),
+                                            Named("probs") = probs,
+                                            Named("w") = wt_vec,
+                                            Named("na.rm") = true,
+                                            Named("names") = false,
+                                            Named("type") = type);
       for (int k = 0; k < nprobs; k++) {
         result(j, k) = colQuant[k];
       }
@@ -194,6 +216,9 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
   int ncol = mat.ncol();
   int nprobs = probs.size();
 
+  Rcpp::Environment collapse_env = Rcpp::Environment::namespace_env("collapse");
+  Rcpp::Function my_fquantile = collapse_env["fquantile"];
+  
   // Result matrix: rows = rows of mat, columns = quantiles
   NumericMatrix result(nrow, nprobs);
 
@@ -203,7 +228,12 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
     // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
     // #endif
     for (int i = 0; i < nrow; i++) {
-      NumericVector rowQuant = _quan_wt(mat(i, _), probs);
+      //NumericVector rowQuant = _quan_wt(mat(i, _), probs);
+      NumericVector rowQuant = my_fquantile(mat(i, _),
+                                            Named("probs") = probs,
+                                            Named("na.rm") = true,
+                                            Named("names") = false,
+                                            Named("type") = type);
       for (int k = 0; k < nprobs; k++) {
         result(i, k) = rowQuant[k];
       }
@@ -219,7 +249,13 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
     // #endif
     for (int i = 0; i < nrow; i++) {
       NumericVector wt_vec = wt_temp(i, _);
-      NumericVector rowQuant = _quan_wt(mat(i, _), probs, wt_vec, type);
+      //NumericVector rowQuant = _quan_wt(mat(i, _), probs, wt_vec, type);
+      NumericVector rowQuant = my_fquantile(mat(i, _),
+                                            Named("probs") = probs,
+                                            Named("w") = wt_vec,
+                                            Named("na.rm") = true,
+                                            Named("names") = false,
+                                            Named("type") = type);
       for (int k = 0; k < nprobs; k++) {
         result(i, k) = rowQuant[k];
       }
