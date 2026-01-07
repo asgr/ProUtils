@@ -67,22 +67,31 @@ quan_wt(0:10, wt=0:10)
 w = c(3, 5, 2, 1, 4)
 quan_wt(x, c(0.25, 0.5, 0.75), w) # Weighted quantiles
 
-#to see explictly how we use weights, this is how type = 4-9 are computed:
-#for(type in 4:9){
-#  out = quan_wt(x, c(0.25, 0.5, 0.75), w, type=type)
-#  start_mod = switch(type - 3, 1, 0.5, 1, 0, 0.6666667, 0.625)
-#  end_mod = switch(type - 3, 0, 0.5, 1, 0, 0.6666667, 0.625)
-#  x_ord = order(x)
-#  w_mod = w[x_ord]
-#  w_tot = w_mod[1]*start_mod + sum(w_mod[1:4] + w_mod[2:5])/2 + w_mod[5]*end_mod
-#  w_mod = c(w_mod[1]*start_mod, (w_mod[1:4] + w_mod[2:5])/2)
-#
-#  plot(x[x_ord], cumsum(w_mod)/w_tot, type='l', xlim=c(0.5,7.5), ylim=c(0,1))
-#  rect(-1, -1, out[1], 0.25, lty=3)
-#  rect(-1, -1, out[2], 0.5, lty=3)
-#  rect(-1, -1, out[3], 0.75, lty=3)
-#  legend('topleft', legend=paste('type:', type))
-#}
+#To see explictly how we use weights, this is how type = 4-9 are computed:
+probs = seq(0,1,by=0.1)
+for(type in 4:9){
+  out = quan_wt(x, probs, w, type=type)
+  start_mod = switch(type - 3, 1, 0.5, 1, 0, 0.6666667, 0.625)
+  end_mod = switch(type - 3, 0, 0.5, 1, 0, 0.6666667, 0.625)
+  x_ord = order(x)
+  x_ord = order(x)
+  w_mod = w[x_ord]
+  w_fin = c(w_mod[1]*start_mod, (w_mod[1:4] + w_mod[2:5])/2)
+  w_tot = sum(w_fin) + w_mod[5]*end_mod
+
+  plot(x[x_ord], cumsum(w_fin)/w_tot, type='l', xlim=c(0.5,7.5), ylim=c(0,1))
+  for(i in seq_along(out)){
+    rect(-1, -1, out[i], probs[i], lty=3)
+  }
+  legend('topleft', legend=paste('type:', type))
+}
+
+#We can also check that when weights are 1 we get the same results as base quantile:
+w = c(1, 1, 1, 1, 1)
+for(type in 4:9){
+  print(all.equal(quan_wt(x, probs, w=w, type=type),
+    quantile(x, probs, type=type), check.attributes = FALSE))
+}
 
 #matrix examples
 mat = matrix(1:12, nrow = 4)
