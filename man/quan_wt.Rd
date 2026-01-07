@@ -23,7 +23,7 @@ quan_wt_array(array, probs = 0.5, wt = NULL, type = 7)
   \item{type}{Integer scalar between 4 and 9 selecting one of the continuous quantile algorithms detailed below to be used (see \code{\link{quantile}}). Default is 7, the same as base \code{\link{quantile}}.}
 }
 \details{
-For \code{quan_wt}, the function computes weighted quantiles using different rules that capture the classic continuous quantile \option{type} (see Examples).
+For \code{quan_wt}, the function computes weighted quantiles using different rules that capture the classic continuous quantile \option{type} (see Examples). When \option{wt} is NULL then internally the R quantile C-level function is used, and when \option{probs} is scalar 0.5 the R median  C-level function is used.
 
 For \code{quan_wt_mat_col} and \code{quan_wt_mat_row} matrix functions, when \code{length(probs) == 1} the functions return a numeric vector of length equal to the number of columns/rows (as relevant). If multiple quantiles are requested, the function returns a numeric matrix with:
 \itemize{
