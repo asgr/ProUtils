@@ -8,7 +8,7 @@ Maintainer: Aaron Robotham <aaron.robotham@uwa.edu.au>
 Description: Various useful fairly low-level functions that are used across multiple ProTools packages.
 License: LGPL-3
 Imports: Rcpp (>= 1.0.0)
-Suggests: knitr, magicaxis, matrixStats, foreach, doParallel
+Suggests: knitr, rmarkdown, magicaxis, matrixStats, foreach, doParallel
 Encoding: UTF-8
 LazyData: true
 LinkingTo: Rcpp
