@@ -1,6 +1,10 @@
 
 # ProUtils
 
+<!-- badges: start -->
+![R-CMD-check](https://github.com/asgr/ProUtils/workflows/R-CMD-check/badge.svg)
+<!-- badges: end -->
+
 **ProUtils** is an R package providing utility functions for efficient data processing and statistical operations, including weighted quantiles, running medians, and matrix-based computations. It leverages **Rcpp** for high-performance C++ implementations.
 
 ---
