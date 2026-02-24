@@ -151,7 +151,7 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
   int ncol = mat.ncol();
   int nprobs = probs.size();
 
-  Rcpp::Environment collapse_env = Rcpp::Environment::namespace_env("collapse");
+  // Rcpp::Environment collapse_env = Rcpp::Environment::namespace_env("collapse");
   // Rcpp::Function my_fquantile = collapse_env["fquantile"];
 
   // Result matrix: rows = columns of mat, columns = quantiles
