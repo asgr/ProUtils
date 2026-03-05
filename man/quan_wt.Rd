@@ -20,7 +20,7 @@ quan_wt_array(array, probs = 0.5, wt = NULL, type = 7)
   \item{array}{Numeric array or list. Either 3D array (cube) or a list of 2D matrices (each matrix must have the same dimensions).}
   \item{probs}{Numeric vector of probabilities in [0, 1]. Defaults to \code{0.5} (median).}
   \item{wt}{An optional numeric vector/matrix/array/list of weights of the same length/dims/shape as \option{x}/\option{mat}/\option{array}. If \code{NULL}, equal weights are assumed. If using errors, then \option{wt} should be the inverse variance.}
-  \item{type}{Integer scalar between 4 and 9 selecting one of the continuous quantile algorithms detailed below to be used (see \code{\link{quantile}}). Default is 7, the same as base \code{\link{quantile}}.}
+  \item{type}{Integer scalar between 1 and 9 selecting one of the quantile algorithms detailed below to be used (see \code{\link{quantile}}). Types 1-3 use a step-function (empirical CDF) approach and are supported for weighted data. Types 4-9 use a trapezoid/midpoint grid with linear interpolation. Default is 7, the same as base \code{\link{quantile}}.}
 }
 \details{
 For \code{quan_wt}, the function computes weighted quantiles using different rules that capture the classic continuous quantile \option{type} (see Examples). When \option{wt} is NULL then internally the R quantile C-level function is used, and when \option{probs} is scalar 0.5 the R median  C-level function is used.
@@ -48,9 +48,9 @@ x = c(5, 1, 4, 7, 3)
 quan_wt(x)                      # Median
 quan_wt(x, c(0.25, 0.5, 0.75))  # Multiple quantiles
 
-#check how we compare to base quantile (only type 5:9 supported):
+#check how we compare to base quantile (types 1:9 supported):
 tempx = runif(100)
-for(type in 4:9){
+for(type in 1:9){
   plot(quantile(tempx, seq(0,1,len=101), type=type),
     quan_wt(tempx, seq(0,1,len=101), type=type), xlab='base', ylab='quan_wt')
   abline(0,1)
@@ -88,7 +88,7 @@ for(type in 4:9){
 
 #We can also check that when weights are 1 we get the same results as base quantile:
 w = c(1, 1, 1, 1, 1)
-for(type in 4:9){
+for(type in 1:9){
   print(all.equal(quan_wt(x, probs, w=w, type=type),
     quantile(x, probs, type=type), check.attributes = FALSE))
 }
