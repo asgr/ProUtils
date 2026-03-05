@@ -117,11 +117,10 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
       } else {
         // type == 3: nearest order statistic, with R-compatible tie-breaking.
         //
-        // The region for x[i] (0-indexed) is (mid[i], mid[i+1]) strictly.
-        // At an exact midpoint mid[j]:
-        //   1-indexed j+1 is odd  → assign x[j]   (0-indexed)
-        //   1-indexed j+1 is even → assign x[j-1] (0-indexed)
-        // For p < mid[0]: assign x[0]; for p > mid[n-1]: assign x[n-1].
+        // For p strictly between mid[j-1] and mid[j], return data[j-1].
+        // At an exact midpoint mid[j] (0-indexed), use R's "nearest even" rule:
+        //   j == 0 or j is odd  → return data[j]   (round up / to even 1-indexed)
+        //   j >= 2 and j is even → return data[j-1] (round down to even 1-indexed)
 
         // Find first mid[j] >= prob
         auto it = std::lower_bound(mid.begin(), mid.end(), prob);
@@ -130,11 +129,11 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
         if (j >= data.size()) {
           result[k] = data.back().first;
         } else if (mid[j] == prob) {
-          // Exact midpoint: apply round-half-to-even (by 1-indexed position)
-          if ((j + 1) % 2 == 1) {  // 1-indexed j+1 is odd
+          // Exact midpoint: apply R-compatible "nearest even order statistic" rule
+          if (j == 0 || j % 2 == 1) {
             result[k] = data[j].first;
-          } else {                  // 1-indexed j+1 is even
-            result[k] = (j > 0) ? data[j - 1].first : data[0].first;
+          } else {
+            result[k] = data[j - 1].first;
           }
         } else if (j == 0) {
           // prob < mid[0]: below first midpoint
