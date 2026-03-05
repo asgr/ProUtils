@@ -12,7 +12,7 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
   // Special return case where x is empty/NULL/missing:
   if (n == 0) return NumericVector(nprobs, NA_REAL);
 
-  if (type < 4 || type > 9) stop("type must be between 4 and 9 (inclusive)");
+  if (type < 1 || type > 9) stop("type must be between 1 and 9 (inclusive)");
 
   // Validate q values
   for (int i = 0; i < nprobs; i++) {
@@ -65,6 +65,89 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
               return a.first < b.first;
             });
 
+  // Types 1-3: step-function (empirical CDF) based
+  if (type <= 3) {
+    // Build right-continuous CDF: cdf_right[i] = sum(w[0..i]) / total_weight
+    double total_weight = 0.0;
+    for (size_t i = 0; i < data.size(); i++) total_weight += data[i].second;
+
+    // Special return case where there is no weight at all:
+    if (total_weight == 0.0) return NumericVector(nprobs, NA_REAL);
+
+    std::vector<double> cdf_right(data.size());
+    double cumw = 0.0;
+    for (size_t i = 0; i < data.size(); i++) {
+      cumw += data[i].second;
+      cdf_right[i] = cumw / total_weight;
+    }
+
+    // For type 3, precompute midpoints: mid[i] = (cdf_left[i] + cdf_right[i]) / 2
+    std::vector<double> mid;
+    if (type == 3) {
+      mid.resize(data.size());
+      for (size_t i = 0; i < data.size(); i++) {
+        double cdf_left = (i > 0) ? cdf_right[i - 1] : 0.0;
+        mid[i] = (cdf_left + cdf_right[i]) / 2.0;
+      }
+    }
+
+    NumericVector result(nprobs);
+    for (int k = 0; k < nprobs; k++) {
+      double prob = probs[k];
+      if (prob <= 0.0) { result[k] = data.front().first; continue; }
+      if (prob >= 1.0) { result[k] = data.back().first;  continue; }
+
+      if (type == 1) {
+        // Smallest i such that cdf_right[i] >= prob
+        auto it = std::lower_bound(cdf_right.begin(), cdf_right.end(), prob);
+        size_t i = static_cast<size_t>(it - cdf_right.begin());
+        result[k] = data[std::min(i, data.size() - 1)].first;
+
+      } else if (type == 2) {
+        // Like type 1, but average adjacent values when prob falls exactly on a CDF step
+        auto it = std::lower_bound(cdf_right.begin(), cdf_right.end(), prob);
+        size_t i = static_cast<size_t>(it - cdf_right.begin());
+        if (i >= data.size()) i = data.size() - 1;
+        if (cdf_right[i] == prob && i + 1 < data.size()) {
+          result[k] = (data[i].first + data[i + 1].first) / 2.0;
+        } else {
+          result[k] = data[i].first;
+        }
+
+      } else {
+        // type == 3: nearest order statistic, with R-compatible tie-breaking.
+        //
+        // For p strictly between mid[j-1] and mid[j], return data[j-1].
+        // At an exact midpoint mid[j] (0-indexed), use R's "nearest even" rule:
+        //   j == 0 or j is odd  → return data[j]   (round up / to even 1-indexed)
+        //   j >= 2 and j is even → return data[j-1] (round down to even 1-indexed)
+
+        // Find first mid[j] >= prob
+        auto it = std::lower_bound(mid.begin(), mid.end(), prob);
+        size_t j = static_cast<size_t>(it - mid.begin());
+
+        if (j >= data.size()) {
+          result[k] = data.back().first;
+        } else if (mid[j] == prob) {
+          // Exact midpoint: apply R-compatible "nearest even order statistic" rule
+          if (j == 0 || j % 2 == 1) {
+            result[k] = data[j].first;
+          } else {
+            result[k] = data[j - 1].first;
+          }
+        } else if (j == 0) {
+          // prob < mid[0]: below first midpoint
+          result[k] = data[0].first;
+        } else {
+          // prob in (mid[j-1], mid[j]) strictly → assign x[j-1]
+          result[k] = data[j - 1].first;
+        }
+      }
+    }
+    return result;
+  }
+
+  // Types 4-9: trapezoid/midpoint grid with linear interpolation
   // Adjust quantile position based on type
   double start_mod;
   double end_mod;
@@ -75,7 +158,7 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
     case 7: start_mod = 0; end_mod = 0; break;
     case 8: start_mod = 2.0/3.0; end_mod = 2.0/3.0; break;
     case 9: start_mod = 0.625; end_mod = 0.625; break;
-    default: stop("type must be between 4 and 9 (inclusive)"); break;
+    default: stop("type must be between 1 and 9 (inclusive)"); break;
   }
 
   // Compute total weight
