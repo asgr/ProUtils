@@ -5,51 +5,18 @@ eq_wt <- function(n) rep(1, n)
 
 # ── Equal-weight collapse to base R ──────────────────────────────────────────
 
-test_that("quan_wt with equal weights matches stats::quantile for types 4-9", {
+test_that("quan_wt with equal weights matches stats::quantile for types 1-9", {
   set.seed(42)
   x <- rnorm(20)
   probs <- c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1)
   wt    <- eq_wt(length(x))
 
-  for (t in 4:9) {
+  for (t in 1:9) {
     expected <- stats::quantile(x, probs = probs, type = t, names = FALSE)
     got      <- quan_wt(x, probs = probs, wt = wt, type = t)
     expect_equal(got, expected, tolerance = 1e-10,
                  label = paste0("type=", t))
   }
-})
-
-test_that("quan_wt with equal weights matches stats::quantile for type 1", {
-  set.seed(1)
-  x <- sample(1:10, 15, replace = TRUE)
-  probs <- c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1)
-  wt    <- eq_wt(length(x))
-
-  expected <- stats::quantile(x, probs = probs, type = 1, names = FALSE)
-  got      <- quan_wt(x, probs = probs, wt = wt, type = 1)
-  expect_equal(got, expected, tolerance = 1e-10)
-})
-
-test_that("quan_wt with equal weights matches stats::quantile for type 2", {
-  set.seed(2)
-  x <- sample(1:10, 15, replace = TRUE)
-  probs <- c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1)
-  wt    <- eq_wt(length(x))
-
-  expected <- stats::quantile(x, probs = probs, type = 2, names = FALSE)
-  got      <- quan_wt(x, probs = probs, wt = wt, type = 2)
-  expect_equal(got, expected, tolerance = 1e-10)
-})
-
-test_that("quan_wt with equal weights matches stats::quantile for type 3", {
-  set.seed(3)
-  x <- sample(1:10, 15, replace = TRUE)
-  probs <- c(0, 0.1, 0.25, 0.5, 0.75, 0.9, 1)
-  wt    <- eq_wt(length(x))
-
-  expected <- stats::quantile(x, probs = probs, type = 3, names = FALSE)
-  got      <- quan_wt(x, probs = probs, wt = wt, type = 3)
-  expect_equal(got, expected, tolerance = 1e-10)
 })
 
 test_that("quan_wt equal-weight type 1/2/3 matches base R on simple integer sequence", {
