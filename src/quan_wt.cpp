@@ -12,7 +12,7 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
   // Special return case where x is empty/NULL/missing:
   if (n == 0) return NumericVector(nprobs, NA_REAL);
 
-  if (type < 4 || type > 9) stop("type must be between 5 and 9 (inclusive)");
+  if (type < 4 || type > 9) stop("type must be between 4 and 9 (inclusive)");
 
   // Validate q values
   for (int i = 0; i < nprobs; i++) {
@@ -23,7 +23,7 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
   if (wt.isNull()) {
     //wt_vec = NumericVector(n, 1.0); // equal weights if none provided
     Rcpp::Environment stats_env = Rcpp::Environment::namespace_env("stats");
-    if (probs.size() == 1 && std::abs(probs[0] - 0.5) < 1e-12) {
+    if (type == 7 && probs.size() == 1 && std::abs(probs[0] - 0.5) < 1e-12) {
       Rcpp::Function my_median = stats_env["median"];
       return my_median(x, true); // positional argument for na.rm
     } else {
@@ -37,6 +37,9 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
   } else {
     wt_vec = NumericVector(wt);
     if (wt_vec.size() != n) stop("x and wt must have the same length");
+    for (int i = 0; i < n; i++) {
+      if (!NumericVector::is_na(wt_vec[i]) && wt_vec[i] < 0.0) stop("All wt values must be non-negative");
+    }
   }
 
   // Prepare data
@@ -70,8 +73,9 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
     case 5: start_mod = 0.5; end_mod = 0.5; break;
     case 6: start_mod = 1; end_mod = 1; break;
     case 7: start_mod = 0; end_mod = 0; break;
-    case 8: start_mod = 0.6666667; end_mod = 0.6666667; break;
+    case 8: start_mod = 2.0/3.0; end_mod = 2.0/3.0; break;
     case 9: start_mod = 0.625; end_mod = 0.625; break;
+    default: stop("type must be between 4 and 9 (inclusive)"); break;
   }
 
   // Compute total weight
@@ -109,20 +113,25 @@ NumericVector _quan_wt(const NumericVector &x, const NumericVector probs = Numer
       continue;
     }
 
-    result[k] = data.back().first; // default
-    for (size_t i = 0; i < data.size(); i++) {
-      if (cumProb[i] >= prob) {
-        if (i == 0) {
-          result[k] = data[i].first;
+    // Use binary search for O(log n) lookup instead of linear scan
+    auto it = std::lower_bound(cumProb.begin(), cumProb.end(), prob);
+    if (it == cumProb.end()) {
+      result[k] = data.back().first;
+    } else {
+      size_t i = static_cast<size_t>(it - cumProb.begin());
+      if (i == 0) {
+        result[k] = data[i].first;
+      } else {
+        double prevVal = data[i - 1].first;
+        double currVal = data[i].first;
+        double prevProb = cumProb[i - 1];
+        double currProb = cumProb[i];
+        if (currProb == prevProb) {
+          result[k] = (prevVal + currVal) / 2.0;
         } else {
-          double prevVal = data[i - 1].first;
-          double currVal = data[i].first;
-          double prevProb = cumProb[i - 1];
-          double currProb = cumProb[i];
           double fraction = (prob - prevProb) / (currProb - prevProb);
           result[k] = prevVal + fraction * (currVal - prevVal);
         }
-        break;
       }
     }
   }
@@ -163,7 +172,7 @@ SEXP quan_wt_mat_col(NumericMatrix mat, NumericVector probs = NumericVector::cre
     // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
     // #endif
     for (int j = 0; j < ncol; j++) {
-      NumericVector colQuant = _quan_wt(mat(_, j), probs);
+      NumericVector colQuant = _quan_wt(mat(_, j), probs, R_NilValue, type);
       // NumericVector colQuant = my_fquantile(mat(_, j),
       //              Named("probs") = probs,
       //              Named("na.rm") = true,
@@ -228,7 +237,7 @@ SEXP quan_wt_mat_row(NumericMatrix mat, NumericVector probs = NumericVector::cre
     // #pragma omp parallel for schedule(dynamic, 10) if(nrow > 100) num_threads(nthreads)
     // #endif
     for (int i = 0; i < nrow; i++) {
-      NumericVector rowQuant = _quan_wt(mat(i, _), probs);
+      NumericVector rowQuant = _quan_wt(mat(i, _), probs, R_NilValue, type);
       // NumericVector rowQuant = my_fquantile(mat(i, _),
       //                                       Named("probs") = probs,
       //                                       Named("na.rm") = true,
